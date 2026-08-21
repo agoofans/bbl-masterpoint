@@ -5,6 +5,7 @@ const state = {
   rankings: null,
   rankingType: "master_points",
   privateData: null,
+  routeToken: 0,
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -39,7 +40,7 @@ function parseAccessCode(value) {
   const code = value.trim();
   const parts = code.split(".");
   if (parts.length !== 4 || parts[0] !== "BRIDGE1") {
-    throw new Error("访问码格式不正确。请粘贴完整访问码，或上传 .key.json 文件。");
+    throw new Error("个人链接格式不正确或已被截断。");
   }
   const [, siteId, blobId, key] = parts;
   const safe = /^[A-Za-z0-9_-]+$/;
@@ -49,18 +50,16 @@ function parseAccessCode(value) {
   return { siteId, blobId, key };
 }
 
-function parseKeyFile(value) {
-  if (!value || value.format !== "bridge-private-key-v1") {
-    throw new Error("这不是本网站支持的个人密钥文件。");
-  }
-  return { siteId: value.site_id, blobId: value.blob_id, key: value.key };
-}
-
 async function decryptRecord(credentials) {
   if (credentials.siteId !== state.config.site_id) {
     throw new Error("此密钥不属于当前网站。");
   }
-  const response = await fetch(`data/${credentials.blobId}.json`, { cache: "no-store" });
+  let response = await fetch(`data/${credentials.blobId}.json`, { cache: "no-store" });
+  // Compatibility with repositories whose encrypted JSON files were accidentally
+  // uploaded to the repository root instead of the data directory.
+  if (!response.ok && response.status === 404) {
+    response = await fetch(`${credentials.blobId}.json`, { cache: "no-store" });
+  }
   if (!response.ok) {
     throw new Error("找不到对应的加密记录。密钥可能已轮换或网站尚未更新。");
   }
@@ -198,57 +197,48 @@ function renderPrivate(record) {
   $("#record-search").value = "";
   renderRecords();
   renderLevelUps();
-  $("#unlock-card").hidden = true;
+  $("#private-status").hidden = true;
   $("#private-content").hidden = false;
-  $("#unlock-status").textContent = "";
 }
 
-function clearPrivate() {
+function showPublic() {
+  state.routeToken += 1;
   state.privateData = null;
+  $("#rankings-panel").hidden = false;
+  $("#private-panel").hidden = true;
   $("#private-content").hidden = true;
-  $("#unlock-card").hidden = false;
-  $("#access-code").value = "";
-  $("#key-file").value = "";
   $("#record-cards").replaceChildren();
   $("#level-body").replaceChildren();
-  $("#unlock-status").textContent = "私人数据已从当前页面清除。";
 }
 
-async function unlock(credentials) {
-  const status = $("#unlock-status");
+async function showPrivateFromLink(code) {
+  const routeToken = ++state.routeToken;
+  state.privateData = null;
+  $("#rankings-panel").hidden = true;
+  $("#private-panel").hidden = false;
+  $("#private-content").hidden = true;
+  const status = $("#private-status");
+  status.hidden = false;
   status.className = "status-message";
-  status.textContent = "正在读取并解密…";
-  $("#unlock-button").disabled = true;
+  status.textContent = "正在读取并解密个人记录…";
   try {
-    const record = await decryptRecord(credentials);
+    const record = await decryptRecord(parseAccessCode(code));
+    if (routeToken !== state.routeToken) return;
     renderPrivate(record);
   } catch (error) {
+    if (routeToken !== state.routeToken) return;
     status.className = "status-message is-error";
-    status.textContent = error.message || "无法解密私人记录。";
-  } finally {
-    $("#unlock-button").disabled = false;
+    status.textContent = error.message || "无法打开此个人链接。";
   }
 }
 
-async function handleKeyFile(file) {
-  if (!file) return;
-  try {
-    const value = JSON.parse(await file.text());
-    await unlock(parseKeyFile(value));
-  } catch (error) {
-    const status = $("#unlock-status");
-    status.className = "status-message is-error";
-    status.textContent = error.message || "密钥文件无法读取。";
-  }
+function routeFromHash() {
+  const code = new URLSearchParams(location.hash.slice(1)).get("p");
+  if (code) showPrivateFromLink(code);
+  else showPublic();
 }
 
 function installEvents() {
-  $$(".tab").forEach((button) => button.addEventListener("click", () => {
-    $$(".tab").forEach((item) => item.classList.toggle("is-active", item === button));
-    const selected = button.dataset.tab;
-    $("#rankings-panel").hidden = selected !== "rankings";
-    $("#private-panel").hidden = selected !== "private";
-  }));
   $$(".segment").forEach((button) => button.addEventListener("click", () => {
     state.rankingType = button.dataset.ranking;
     $$(".segment").forEach((item) => item.classList.toggle("is-active", item === button));
@@ -256,26 +246,11 @@ function installEvents() {
   }));
   $("#ranking-search").addEventListener("input", renderRankings);
   $("#record-search").addEventListener("input", renderRecords);
-  $("#unlock-button").addEventListener("click", () => {
-    try { unlock(parseAccessCode($("#access-code").value)); }
-    catch (error) {
-      $("#unlock-status").className = "status-message is-error";
-      $("#unlock-status").textContent = error.message;
-    }
+  $("#back-to-rankings").addEventListener("click", () => {
+    history.replaceState(null, "", location.pathname + location.search);
+    showPublic();
   });
-  $("#key-file").addEventListener("change", (event) => handleKeyFile(event.target.files[0]));
-  $("#clear-private").addEventListener("click", clearPrivate);
-  const zone = $("#drop-zone");
-  zone.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("#key-file").click(); }
-  });
-  for (const eventName of ["dragenter", "dragover"]) {
-    zone.addEventListener(eventName, (event) => { event.preventDefault(); zone.classList.add("is-dragging"); });
-  }
-  for (const eventName of ["dragleave", "drop"]) {
-    zone.addEventListener(eventName, (event) => { event.preventDefault(); zone.classList.remove("is-dragging"); });
-  }
-  zone.addEventListener("drop", (event) => handleKeyFile(event.dataTransfer.files[0]));
+  window.addEventListener("hashchange", routeFromHash);
 }
 
 async function initialize() {
@@ -292,10 +267,10 @@ async function initialize() {
     text($("#site-title"), state.config.site_title);
     text($("#site-subtitle"), state.config.site_subtitle);
     text($("#public-description"), state.config.public_description);
-    text($("#private-description"), state.config.private_description);
     text($("#footer-text"), state.config.footer_text);
     text($("#updated-at"), `更新于 ${formatDate(state.rankings.generated_at)}`);
     renderRankings();
+    routeFromHash();
   } catch (error) {
     $("#ranking-empty").hidden = false;
     $("#ranking-empty").textContent = "网站数据加载失败，请稍后重试。";
