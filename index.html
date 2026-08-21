@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>桥牌会员积分查询</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-mark" aria-hidden="true">♠</div>
+      <div>
+        <p class="eyebrow">BRIDGE RECORDS</p>
+        <h1 id="site-title">桥牌会员积分查询</h1>
+        <p id="site-subtitle" class="subtitle">公开积分排名与个人参赛记录</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="page-shell">
+    <nav class="tabs" aria-label="查询区域">
+      <button class="tab is-active" data-tab="rankings" type="button">公开积分榜</button>
+      <button class="tab" data-tab="private" type="button">我的参赛记录</button>
+    </nav>
+
+    <section id="rankings-panel" class="panel tab-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">PUBLIC RANKINGS</p>
+          <h2>公开积分榜</h2>
+          <p id="public-description" class="muted"></p>
+        </div>
+        <div id="updated-at" class="updated-at"></div>
+      </div>
+
+      <div class="ranking-controls">
+        <div class="segmented" role="group" aria-label="选择积分榜">
+          <button class="segment is-active" data-ranking="master_points" type="button">大师分</button>
+          <button class="segment" data-ranking="rating_points" type="button">等级分</button>
+        </div>
+        <label class="search-box">
+          <span class="sr-only">搜索姓名或会员号</span>
+          <input id="ranking-search" type="search" placeholder="搜索姓名或会员号" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table ranking-table">
+          <thead>
+            <tr><th>排名</th><th>姓名</th><th>会员号</th><th>称号</th><th id="score-heading">大师分</th></tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+      </div>
+      <p id="ranking-empty" class="empty-state" hidden>没有匹配的会员。</p>
+    </section>
+
+    <section id="private-panel" class="panel tab-panel" hidden>
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">PRIVATE RECORDS</p>
+          <h2>我的参赛记录</h2>
+          <p id="private-description" class="muted"></p>
+        </div>
+        <span class="privacy-badge">浏览器本地解密</span>
+      </div>
+
+      <div id="unlock-card" class="unlock-grid">
+        <label id="drop-zone" class="drop-zone" tabindex="0">
+          <input id="key-file" type="file" accept=".json,application/json" hidden>
+          <span class="drop-icon" aria-hidden="true">⇧</span>
+          <strong>上传个人密钥文件</strong>
+          <span>点击选择或将 .key.json 拖到这里</span>
+        </label>
+        <div class="or-divider"><span>或</span></div>
+        <div class="code-entry">
+          <label for="access-code">粘贴访问码</label>
+          <textarea id="access-code" rows="4" spellcheck="false" autocomplete="off" placeholder="BRIDGE1.…"></textarea>
+          <button id="unlock-button" class="primary-button" type="button">解密并查看</button>
+        </div>
+      </div>
+      <p id="unlock-status" class="status-message" role="status" aria-live="polite"></p>
+
+      <div id="private-content" hidden>
+        <div class="member-banner">
+          <div>
+            <p class="section-kicker">MEMBER</p>
+            <h3 id="member-name"></h3>
+            <p id="member-meta" class="muted"></p>
+          </div>
+          <button id="clear-private" class="ghost-button" type="button">退出并清除</button>
+        </div>
+
+        <div class="stat-grid">
+          <article><span>当前称号</span><strong id="stat-title"></strong></article>
+          <article><span>大师分</span><strong id="stat-master"></strong></article>
+          <article><span>等级分</span><strong id="stat-rating"></strong></article>
+          <article><span>参赛次数</span><strong id="stat-count"></strong></article>
+        </div>
+
+        <div class="content-section">
+          <div class="section-row">
+            <div><p class="section-kicker">TOURNAMENTS</p><h3>参赛明细</h3></div>
+            <input id="record-search" class="compact-search" type="search" placeholder="筛选赛事、主办方或类别">
+          </div>
+          <div id="record-cards" class="record-cards"></div>
+          <p id="record-empty" class="empty-state" hidden>没有匹配的参赛记录。</p>
+        </div>
+
+        <div class="content-section">
+          <div class="section-row"><div><p class="section-kicker">LEVEL HISTORY</p><h3>等级变化</h3></div></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>日期</th><th>原等级</th><th>新等级</th><th>赛事</th><th>主办方</th></tr></thead>
+              <tbody id="level-body"></tbody>
+            </table>
+          </div>
+          <p id="level-empty" class="empty-state" hidden>暂无等级变化记录。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><p id="footer-text"></p></footer>
+</body>
+</html>

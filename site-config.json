@@ -1,0 +1,11 @@
+{
+  "site_title": "示例桥牌积分查询",
+  "site_subtitle": "公开积分排名与个人参赛记录",
+  "public_description": "以下姓名、会员号、积分和比赛记录均为完全虚构的演示数据。",
+  "private_description": "上传示例个人密钥，查看完整参赛明细、当次得分与等级变化。所有解密均在浏览器本地完成。",
+  "footer_text": "演示网站 · 全部数据均为虚构内容",
+  "format": "bridge-site-config-v1",
+  "version": 1,
+  "site_id": "-PW-XwDWfuhkPgsJ",
+  "generated_at": "2026-08-21T07:47:08Z"
+}
