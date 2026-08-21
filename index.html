@@ -24,11 +24,6 @@
   </header>
 
   <main id="main" class="page-shell">
-    <nav class="tabs" aria-label="查询区域">
-      <button class="tab is-active" data-tab="rankings" type="button">公开积分榜</button>
-      <button class="tab" data-tab="private" type="button">我的参赛记录</button>
-    </nav>
-
     <section id="rankings-panel" class="panel tab-panel">
       <div class="panel-heading">
         <div>
@@ -65,27 +60,12 @@
       <div class="panel-heading">
         <div>
           <p class="section-kicker">PRIVATE RECORDS</p>
-          <h2>我的参赛记录</h2>
-          <p id="private-description" class="muted"></p>
+          <h2>个人参赛记录</h2>
+          <p class="muted">此页面由个人专属链接在浏览器本地解密。</p>
         </div>
-        <span class="privacy-badge">浏览器本地解密</span>
+        <button id="back-to-rankings" class="ghost-button" type="button">返回公开排行榜</button>
       </div>
-
-      <div id="unlock-card" class="unlock-grid">
-        <label id="drop-zone" class="drop-zone" tabindex="0">
-          <input id="key-file" type="file" accept=".json,application/json" hidden>
-          <span class="drop-icon" aria-hidden="true">⇧</span>
-          <strong>上传个人密钥文件</strong>
-          <span>点击选择或将 .key.json 拖到这里</span>
-        </label>
-        <div class="or-divider"><span>或</span></div>
-        <div class="code-entry">
-          <label for="access-code">粘贴访问码</label>
-          <textarea id="access-code" rows="4" spellcheck="false" autocomplete="off" placeholder="BRIDGE1.…"></textarea>
-          <button id="unlock-button" class="primary-button" type="button">解密并查看</button>
-        </div>
-      </div>
-      <p id="unlock-status" class="status-message" role="status" aria-live="polite"></p>
+      <p id="private-status" class="status-message" role="status" aria-live="polite">正在读取并解密个人记录…</p>
 
       <div id="private-content" hidden>
         <div class="member-banner">
@@ -94,7 +74,7 @@
             <h3 id="member-name"></h3>
             <p id="member-meta" class="muted"></p>
           </div>
-          <button id="clear-private" class="ghost-button" type="button">退出并清除</button>
+          <span class="privacy-badge">浏览器本地解密</span>
         </div>
 
         <div class="stat-grid">
