@@ -30,6 +30,25 @@ function escapeSearch(value) {
   return String(value ?? "").toLocaleLowerCase("zh-CN");
 }
 
+function rankingBand(item) {
+  const title = String(item.title ?? "");
+  if (Number(item.rank) === 1 || title.includes("黑桃")) return "ranking-row--spade";
+  if (title.includes("红心") || title.includes("终身")) return "ranking-row--heart";
+  if (title.includes("方块") || title.includes("国家") || title.includes("地区")) return "ranking-row--diamond";
+  if (title.includes("梅花") || title.includes("俱乐部") || title.includes("牌手") || title.includes("无等级")) {
+    return "ranking-row--club";
+  }
+  return "ranking-row--neutral";
+}
+
+function podiumClass(rank) {
+  const placement = Number(rank);
+  if (placement === 1) return "podium-gold";
+  if (placement === 2) return "podium-silver";
+  if (placement === 3) return "podium-bronze";
+  return "";
+}
+
 function b64urlToBytes(value) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - value.length % 4) % 4);
   const binary = atob(normalized);
@@ -99,6 +118,7 @@ function renderRankings() {
   body.replaceChildren();
   for (const item of items) {
     const row = document.createElement("tr");
+    row.classList.add(rankingBand(item));
     const values = [item.rank, item.name, item.member_id, item.title, formatNumber(item.score)];
     for (const value of values) {
       const cell = document.createElement("td");
@@ -133,6 +153,8 @@ function renderRecords() {
   for (const record of records) {
     const card = document.createElement("article");
     card.className = "record-card";
+    const podium = podiumClass(record.rank);
+    if (podium) card.classList.add(`record-card--${podium}`);
     const header = document.createElement("div");
     header.className = "record-header";
     const titleWrap = document.createElement("div");
@@ -144,6 +166,7 @@ function renderRecords() {
     titleWrap.append(date, title);
     const rank = document.createElement("div");
     rank.className = "rank-chip";
+    if (podium) rank.classList.add(`rank-chip--${podium}`);
     rank.append(document.createTextNode("第 "));
     const rankValue = document.createElement("strong");
     text(rankValue, record.rank);
