@@ -30,15 +30,26 @@ function escapeSearch(value) {
   return String(value ?? "").toLocaleLowerCase("zh-CN");
 }
 
-function rankingBand(item) {
+function rankingStyleClasses(item) {
   const title = String(item.title ?? "");
-  if (Number(item.rank) === 1 || title.includes("黑桃")) return "ranking-row--spade";
-  if (title.includes("红心") || title.includes("终身")) return "ranking-row--heart";
-  if (title.includes("方块") || title.includes("国家") || title.includes("地区")) return "ranking-row--diamond";
-  if (title.includes("梅花") || title.includes("俱乐部") || title.includes("牌手") || title.includes("无等级")) {
-    return "ranking-row--club";
+  let suit = "neutral";
+  let tier = 0;
+
+  if (title.includes("黑桃")) {
+    suit = "spade";
+    tier = title.includes("特级") ? 4 : title.includes("高级") ? 3 : title.includes("中级") ? 2 : 1;
+  } else if (title.includes("红心")) {
+    suit = "heart";
+    tier = title.includes("高级") ? 3 : title.includes("中级") ? 2 : 1;
+  } else if (title.includes("方块")) {
+    suit = "diamond";
+    tier = title.includes("三星") ? 3 : title.includes("二星") ? 2 : 1;
+  } else if (title.includes("梅花")) {
+    suit = "club";
+    tier = title.includes("三星") ? 3 : title.includes("二星") ? 2 : 1;
   }
-  return "ranking-row--neutral";
+
+  return [`ranking-row--${suit}`, `ranking-row--tier-${tier}`];
 }
 
 function podiumClass(rank) {
@@ -118,7 +129,7 @@ function renderRankings() {
   body.replaceChildren();
   for (const item of items) {
     const row = document.createElement("tr");
-    row.classList.add(rankingBand(item));
+    row.classList.add(...rankingStyleClasses(item));
     const values = [item.rank, item.name, item.member_id, item.title, formatNumber(item.score)];
     for (const value of values) {
       const cell = document.createElement("td");
