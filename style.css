@@ -8,14 +8,11 @@
   --teal-dark: #0a403d;
   --gold: #c68a2b;
   --red: #a43a35;
-  --ranking-orange: #f1602e;
-  --ranking-gold: #ffd966;
-  --ranking-gold-soft: #ffe699;
-  --ranking-blue: #8ea9db;
-  --ranking-blue-soft: #b4c6e7;
-  --ranking-green: #a9d08e;
-  --ranking-green-soft: #c6e0b4;
-  --ranking-neutral: #e7e6e6;
+  --ranking-red-rgb: 241, 96, 46;
+  --ranking-yellow-rgb: 255, 217, 102;
+  --ranking-blue-rgb: 142, 169, 219;
+  --ranking-green-rgb: 169, 208, 142;
+  --ranking-neutral-rgb: 231, 230, 230;
   --shadow: 0 18px 50px rgba(24, 36, 36, .08);
 }
 
@@ -72,15 +69,20 @@ h1 { margin-bottom: .35rem; font-family: Georgia, "STSong", serif; font-size: cl
 .ranking-table th:first-child { color: #322f2b; }
 .ranking-table tbody tr { transition: filter .16s ease; }
 .ranking-table tbody tr:hover { background: inherit; filter: brightness(.965); }
-.ranking-table tbody tr > td { border-bottom-color: rgba(39, 47, 49, .14); }
-.ranking-row--spade > td { background: var(--ranking-orange); color: #24150e; }
-.ranking-row--heart > td { background: var(--ranking-gold-soft); }
-.ranking-row--heart:nth-child(-n+3) > td { background: var(--ranking-gold); }
-.ranking-row--diamond > td { background: var(--ranking-blue-soft); }
-.ranking-row--diamond:nth-child(even) > td { background: var(--ranking-blue); }
-.ranking-row--club > td { background: var(--ranking-green-soft); }
-.ranking-row--club:nth-child(even) > td { background: var(--ranking-green); }
-.ranking-row--neutral > td { background: var(--ranking-neutral); }
+.ranking-row--spade { --ranking-rgb: var(--ranking-red-rgb); }
+.ranking-row--heart { --ranking-rgb: var(--ranking-yellow-rgb); }
+.ranking-row--diamond { --ranking-rgb: var(--ranking-blue-rgb); }
+.ranking-row--club { --ranking-rgb: var(--ranking-green-rgb); }
+.ranking-row--neutral { --ranking-rgb: var(--ranking-neutral-rgb); }
+.ranking-row--tier-0 { --ranking-opacity: .7; }
+.ranking-row--tier-1 { --ranking-opacity: .34; }
+.ranking-row--tier-2 { --ranking-opacity: .52; }
+.ranking-row--tier-3 { --ranking-opacity: .70; }
+.ranking-row--tier-4 { --ranking-opacity: .88; }
+.ranking-table tbody tr > td {
+  background: rgba(var(--ranking-rgb), var(--ranking-opacity));
+  border-bottom-color: rgba(39, 47, 49, .14);
+}
 .ranking-row--spade td:first-child,
 .ranking-row--heart td:first-child,
 .ranking-row--diamond td:first-child,
