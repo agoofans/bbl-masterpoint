@@ -20,6 +20,18 @@ function formatNumber(value) {
   return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 4 }).format(Number(value));
 }
 
+function formatPointsGain(value) {
+  const formatted = formatNumber(value);
+  if (formatted === "—") return formatted;
+  return Number(value) > 0 ? `+${formatted}` : formatted;
+}
+
+function formatRankSummary(metric) {
+  if (!metric || !metric.rank || !metric.total) return "暂无排名";
+  const percentage = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 1 }).format(metric.rank_percentage);
+  return `第 ${metric.rank} / ${metric.total} · 前 ${percentage}%`;
+}
+
 function formatDate(value) {
   if (!value) return "—";
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -82,7 +94,7 @@ function parseAccessCode(value) {
 
 async function decryptRecord(credentials) {
   if (credentials.siteId !== state.config.site_id) {
-    throw new Error("此密钥不属于当前网站。");
+    throw new Error("此个人链接不适用于当前网站。");
   }
   let response = await fetch(`data/${credentials.blobId}.json`, { cache: "no-store" });
   // Compatibility with repositories whose encrypted JSON files were accidentally
@@ -91,11 +103,11 @@ async function decryptRecord(credentials) {
     response = await fetch(`${credentials.blobId}.json`, { cache: "no-store" });
   }
   if (!response.ok) {
-    throw new Error("找不到对应的加密记录。密钥可能已轮换或网站尚未更新。");
+    throw new Error("找不到对应的个人记录。链接可能已更新，或网站数据尚未更新。");
   }
   const envelope = await response.json();
   if (envelope.algorithm !== "AES-256-GCM" || envelope.version !== 1) {
-    throw new Error("加密数据格式不受支持。");
+    throw new Error("个人记录格式不受支持。");
   }
   const cryptoKey = await crypto.subtle.importKey(
     "raw", b64urlToBytes(credentials.key), { name: "AES-GCM" }, false, ["decrypt"]
@@ -111,11 +123,11 @@ async function decryptRecord(credentials) {
       b64urlToBytes(envelope.ciphertext)
     );
   } catch {
-    throw new Error("解密失败：密钥不正确或加密数据已损坏。");
+    throw new Error("无法打开个人记录，请确认使用了完整、有效的个人链接。");
   }
   const record = JSON.parse(new TextDecoder().decode(plaintext));
   if (record.format !== "bridge-private-record-v1") {
-    throw new Error("解密后的数据格式无效。");
+    throw new Error("个人记录格式无效。");
   }
   return record;
 }
@@ -130,7 +142,14 @@ function renderRankings() {
   for (const item of items) {
     const row = document.createElement("tr");
     row.classList.add(...rankingStyleClasses(item));
-    const values = [item.rank, item.name, item.member_id, item.title, formatNumber(item.score)];
+    const values = [
+      item.rank,
+      item.name,
+      item.member_id,
+      item.title,
+      formatNumber(item.master_points),
+      formatNumber(item.rating_points),
+    ];
     for (const value of values) {
       const cell = document.createElement("td");
       text(cell, value);
@@ -139,11 +158,17 @@ function renderRankings() {
     body.append(row);
   }
   $("#ranking-empty").hidden = items.length !== 0;
-  text($("#score-heading"), state.rankingType === "master_points" ? "大师分" : "等级分");
+  const masterHeading = $("#master-heading");
+  const ratingHeading = $("#rating-heading");
+  masterHeading.classList.toggle("is-sorted", state.rankingType === "master_points");
+  ratingHeading.classList.toggle("is-sorted", state.rankingType === "rating_points");
+  masterHeading.setAttribute("aria-sort", state.rankingType === "master_points" ? "descending" : "none");
+  ratingHeading.setAttribute("aria-sort", state.rankingType === "rating_points" ? "descending" : "none");
 }
 
-function addDetail(container, label, value) {
+function addDetail(container, label, value, className = "") {
   const item = document.createElement("div");
+  if (className) item.className = className;
   const term = document.createElement("span");
   const description = document.createElement("strong");
   text(term, label);
@@ -178,28 +203,28 @@ function renderRecords() {
     const rank = document.createElement("div");
     rank.className = "rank-chip";
     if (podium) rank.classList.add(`rank-chip--${podium}`);
-    rank.append(document.createTextNode("第 "));
+    const rankLabel = document.createElement("span");
+    text(rankLabel, "名次 / 参赛规模");
     const rankValue = document.createElement("strong");
-    text(rankValue, record.rank);
-    rank.append(rankValue, document.createTextNode(" 名"));
+    text(rankValue, `${formatNumber(record.rank)} / ${formatNumber(record.total_players)}`);
+    rank.append(rankLabel, rankValue);
     header.append(titleWrap, rank);
 
-    const scoreRow = document.createElement("div");
-    scoreRow.className = "score-row";
-    addDetail(scoreRow, "获得大师分", formatNumber(record.earned_master_points));
-    addDetail(scoreRow, "获得等级分", formatNumber(record.earned_rating_points));
+    const highlights = document.createElement("div");
+    highlights.className = "record-highlights";
+    addDetail(highlights, "类别", record.category, "record-highlight record-highlight--category");
+    addDetail(highlights, "赛事等级", record.level, "record-highlight record-highlight--level");
+    addDetail(highlights, "获得大师分", formatPointsGain(record.earned_master_points), "record-highlight record-highlight--score");
+    addDetail(highlights, "获得等级分", formatPointsGain(record.earned_rating_points), "record-highlight record-highlight--score");
 
     const details = document.createElement("div");
     details.className = "record-details";
-    addDetail(details, "类别", record.category);
-    addDetail(details, "赛事等级", record.level);
     addDetail(details, "主办方", record.organization);
     addDetail(details, "地点", record.location);
     addDetail(details, "比赛类型", record.tournament_type);
-    addDetail(details, "总参赛人数", formatNumber(record.total_players));
     addDetail(details, "队伍人数", formatNumber(record.team_size));
     addDetail(details, "赛制长度", formatNumber(record.length));
-    card.append(header, scoreRow, details);
+    card.append(header, highlights, details);
     container.append(card);
   }
   $("#record-empty").hidden = records.length !== 0;
@@ -223,11 +248,14 @@ function renderLevelUps() {
 function renderPrivate(record) {
   state.privateData = record;
   text($("#member-name"), record.member.name);
+  text($("#member-title"), record.member.title);
   text($("#member-meta"), `会员号 ${record.member.member_id}`);
-  text($("#stat-title"), record.member.title);
   text($("#stat-master"), formatNumber(record.member.master_points));
   text($("#stat-rating"), formatNumber(record.member.rating_points));
   text($("#stat-count"), record.participations.length);
+  text($("#stat-master-rank"), formatRankSummary(record.rankings?.master_points));
+  text($("#stat-rating-rank"), formatRankSummary(record.rankings?.rating_points));
+  text($("#stat-count-rank"), formatRankSummary(record.rankings?.participation_count));
   $("#record-search").value = "";
   renderRecords();
   renderLevelUps();
@@ -254,7 +282,7 @@ async function showPrivateFromLink(code) {
   const status = $("#private-status");
   status.hidden = false;
   status.className = "status-message";
-  status.textContent = "正在读取并解密个人记录…";
+  status.textContent = "正在读取个人记录…";
   try {
     const record = await decryptRecord(parseAccessCode(code));
     if (routeToken !== state.routeToken) return;

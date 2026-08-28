@@ -37,9 +37,12 @@
       </div>
 
       <div class="ranking-controls">
-        <div class="segmented" role="group" aria-label="选择积分榜">
-          <button class="segment is-active" data-ranking="master_points" type="button">大师分</button>
-          <button class="segment" data-ranking="rating_points" type="button">等级分</button>
+        <div class="sort-control">
+          <span>排序方式</span>
+          <div class="segmented" role="group" aria-label="选择排行榜排序方式">
+            <button class="segment is-active" data-ranking="master_points" type="button">按大师分</button>
+            <button class="segment" data-ranking="rating_points" type="button">按等级分</button>
+          </div>
         </div>
         <label class="search-box">
           <span class="sr-only">搜索姓名或会员号</span>
@@ -50,7 +53,10 @@
       <div class="table-wrap">
         <table class="data-table ranking-table">
           <thead>
-            <tr><th>排名</th><th>姓名</th><th>会员号</th><th>称号</th><th id="score-heading">大师分</th></tr>
+            <tr>
+              <th>排名</th><th>姓名</th><th>会员号</th><th>称号</th>
+              <th id="master-heading">大师分</th><th id="rating-heading">等级分</th>
+            </tr>
           </thead>
           <tbody id="ranking-body"></tbody>
         </table>
@@ -63,27 +69,36 @@
         <div>
           <p class="section-kicker">PRIVATE RECORDS</p>
           <h2>个人参赛记录</h2>
-          <p class="muted">此页面由个人专属链接在浏览器本地解密。</p>
         </div>
         <button id="back-to-rankings" class="ghost-button" type="button">返回公开排行榜</button>
       </div>
-      <p id="private-status" class="status-message" role="status" aria-live="polite">正在读取并解密个人记录…</p>
+      <p id="private-status" class="status-message" role="status" aria-live="polite">正在读取个人记录…</p>
 
       <div id="private-content" hidden>
         <div class="member-banner">
           <div>
             <p class="section-kicker">MEMBER</p>
-            <h3 id="member-name"></h3>
+            <div class="member-name-line">
+              <h3 id="member-name"></h3>
+              <strong id="member-title" class="member-title"></strong>
+            </div>
             <p id="member-meta" class="muted"></p>
           </div>
-          <span class="privacy-badge">浏览器本地解密</span>
         </div>
 
         <div class="stat-grid">
-          <article><span>当前称号</span><strong id="stat-title"></strong></article>
-          <article><span>大师分</span><strong id="stat-master"></strong></article>
-          <article><span>等级分</span><strong id="stat-rating"></strong></article>
-          <article><span>参赛次数</span><strong id="stat-count"></strong></article>
+          <article>
+            <span>大师分</span><strong id="stat-master"></strong>
+            <small id="stat-master-rank"></small>
+          </article>
+          <article>
+            <span>等级分</span><strong id="stat-rating"></strong>
+            <small id="stat-rating-rank"></small>
+          </article>
+          <article>
+            <span>参赛次数</span><strong id="stat-count"></strong>
+            <small id="stat-count-rank"></small>
+          </article>
         </div>
 
         <div class="content-section">
